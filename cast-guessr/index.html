@@ -9,18 +9,20 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         
+        /* --- THEME DEFINITIONS --- */
         :root {
-            var(--bg-main): #e0f2fe;
-            var(--bg-card): #ffffff;
-            var(--bg-element): #f3f4f6;
-            var(--bg-element-active): #e2e8f0;
-            var(--text-main): #0f172a;
-            var(--text-muted): #64748b;
-            var(--border-color): #38bdf8;
-            var(--accent-color): #ec4899;
-            var(--accent-hover): #db2777;
-            var(--shadow-color): rgba(236, 72, 153, 0.15);
-            var(--modal-overlay): rgba(15, 23, 42, 0.8);
+            /* POP THEME (DEFAULT) */
+            --bg-main: #e0f2fe;
+            --bg-card: #ffffff;
+            --bg-element: #f3f4f6;
+            --bg-element-active: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #38bdf8;
+            --accent-color: #ec4899;
+            --accent-hover: #db2777;
+            --shadow-color: rgba(236, 72, 153, 0.15);
+            --modal-overlay: rgba(15, 23, 42, 0.8);
         }
 
         body.theme-light { --bg-main: #f3f4f6; --bg-card: #ffffff; --bg-element: #e5e7eb; --bg-element-active: #d1d5db; --text-main: #111827; --text-muted: #6b7280; --border-color: #d1d5db; --accent-color: #2563eb; --accent-hover: #1d4ed8; --shadow-color: rgba(0, 0, 0, 0.1); --modal-overlay: rgba(0, 0, 0, 0.7); }
@@ -236,7 +238,7 @@
             selectedGenre: 'all',
             selectedDecade: 'all',
             mode: 'movie',
-            isDaily: true, // DAILIES ON BY DEFAULT NOW
+            isDaily: true,
             isHardMode: false,
             isWorldWideMode: false,
             target: null,
@@ -498,7 +500,6 @@
             for(let i=0; i < gameState.maxGuesses; i++) {
                 const div = document.createElement('div');
                 div.id = `actor-block-${i}`;
-                // Shrinking mobile sizing
                 div.className = "flex flex-col items-center justify-center p-2 rounded-xl element-bg w-24 h-32 md:w-40 md:h-56 transition-all duration-500 transform scale-95 opacity-50 border border-transparent";
                 div.innerHTML = `
                     <div class="w-14 h-14 md:w-28 md:h-28 rounded-full bg-black/10 mb-2 overflow-hidden shadow-inner flex items-center justify-center relative">
@@ -762,7 +763,6 @@
             navigator.clipboard.writeText(text); alert("Copied results to clipboard!");
         });
 
-        // 🚀 FAST MEMORY CACHE ADDED HERE
         const searchCache = {};
         let debounce;
         
@@ -790,7 +790,6 @@
             const q = elements.movieInput.value;
             if(q.length < 2) { elements.autocompleteResults.classList.add('hidden'); return; }
             
-            // Check cache first for instant load!
             const cacheKey = gameState.mode + '_' + q.toLowerCase();
             if (searchCache[cacheKey]) {
                 renderAutocomplete(searchCache[cacheKey]);
@@ -816,16 +815,15 @@
                     results = src.filter(i => i.title.toLowerCase().includes(q.toLowerCase())).slice(0,5).map(i=>i.title);
                 }
                 
-                // Save to memory so next time it is instant
                 searchCache[cacheKey] = results;
                 renderAutocomplete(results);
                 
-            }, 150); // Lowered to 150ms!
+            }, 150); 
         });
 
         window.onload = () => {
             Object.keys(GENRE_MAP).forEach(id => { const opt = document.createElement('option'); opt.value = id; opt.textContent = GENRE_MAP[id]; elements.genreSelect.appendChild(opt); });
-            updateModeUI(); // Ensure UI matches the Daily default state on load
+            updateModeUI(); 
             initializeGame();
         };
     </script>

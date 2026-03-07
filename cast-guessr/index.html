@@ -11,7 +11,6 @@
         
         /* --- THEME DEFINITIONS --- */
         :root {
-            /* POP THEME (DEFAULT) */
             --bg-main: #e0f2fe;
             --bg-card: #ffffff;
             --bg-element: #f3f4f6;
@@ -209,18 +208,23 @@
                     <div class="flex flex-col items-center"><div id="stat-streak" class="text-2xl md:text-3xl font-bold text-accent">0</div><div class="text-[10px] md:text-xs text-[var(--text-muted)] uppercase font-bold mt-1">Streak</div></div>
                     <div class="flex flex-col items-center"><div id="stat-max-streak" class="text-2xl md:text-3xl font-bold text-[var(--text-muted)]">0</div><div class="text-[10px] md:text-xs text-[var(--text-muted)] uppercase font-bold mt-1">Best</div></div>
                 </div>
-                <div id="round-result-section" class="hidden mb-6 text-center">
+                
+                <div id="round-result-section" class="hidden mb-6 text-center border-t border-theme pt-6">
                     <h4 id="final-status-title" class="text-3xl font-black mb-2 animate-bounce"></h4>
                     <div class="relative inline-block group">
                         <img id="result-poster" src="" alt="Poster" class="w-40 md:w-56 mx-auto rounded-xl shadow-2xl mb-4 border-4 border-theme group-hover:border-accent transition">
                     </div>
                     <p class="text-xs text-[var(--text-muted)] uppercase tracking-widest mb-1">The title was</p>
-                    <p id="correct-movie-reveal" class="text-xl md:text-2xl font-black mb-6 uppercase tracking-tight"></p>
+                    <p id="correct-movie-reveal" class="text-xl md:text-2xl font-black mb-2 uppercase tracking-tight"></p>
+                    
+                    <div id="daily-breakdown" class="hidden mb-6 mt-4"></div>
+
                     <div class="flex gap-3">
                         <button id="share-button" class="flex-1 py-3 bg-[#a371f7] hover:bg-[#b084f9] text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg transition active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>SHARE</button>
                         <button id="play-again-btn" class="flex-1 py-3 bg-[#238636] hover:bg-[#2ea043] text-white font-bold rounded-xl shadow-lg transition active:scale-95">NEXT ROUND</button>
                     </div>
                 </div>
+                
                 <div class="border-t border-theme pt-6">
                     <h4 class="text-lg font-bold text-[var(--text-muted)] mb-4 uppercase tracking-widest text-center">Daily History</h4>
                     <div class="overflow-y-auto max-h-40 element-bg rounded-xl border border-theme">
@@ -306,6 +310,7 @@
             finalStatusTitle: document.getElementById('final-status-title'),
             correctMovieReveal: document.getElementById('correct-movie-reveal'),
             resultPoster: document.getElementById('result-poster'),
+            dailyBreakdown: document.getElementById('daily-breakdown'),
             shareButton: document.getElementById('share-button'),
             modeMovieBtn: document.getElementById('mode-movie-btn'),
             modeTvBtn: document.getElementById('mode-tv-btn'),
@@ -417,17 +422,19 @@
             const dateStr = gameState.mode === 'movie' ? item.release_date : item.first_air_date;
             const parsedYear = dateStr ? dateStr.split('-')[0] : "???";
 
+            const safeCast = creds.cast || [];
+
             return {
                 title: gameState.mode === 'movie' ? item.title : item.name,
-                cast: (gameState.mode === 'movie' ? creds.cast : creds.cast).slice(0, 5).map(a => ({ 
+                cast: safeCast.slice(0, 5).map(a => ({ 
                     name: a.name, 
                     character: a.character || "Unknown", 
                     image: a.profile_path ? `https://image.tmdb.org/t/p/w185${a.profile_path}` : null 
                 })),
                 year: parsedYear,
-                genre: item.genre_ids ? item.genre_ids.map(id => GENRE_MAP[id]).slice(0,2).join(' / ') : "Unknown",
+                genre: item.genre_ids && item.genre_ids.length > 0 ? item.genre_ids.map(id => GENRE_MAP[id]).slice(0,2).join(' / ') : "Unknown",
                 genreIds: item.genre_ids || [],
-                posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Poster'
             };
         }
 
@@ -461,6 +468,20 @@
 
         async function initializeGame() {
             loadStats();
+            let showDailyReview = false;
+            let todayData = null;
+
+            if(gameState.isDaily) {
+                const today = new Date().toISOString().split('T')[0];
+                const alreadyPlayed = userStats.history && userStats.history.some(h => h.date === today);
+                if(alreadyPlayed) {
+                    showDailyReview = true;
+                    todayData = userStats.history.find(h => h.date === today);
+                    gameState.isDaily = false;
+                    updateModeUI();
+                }
+            }
+
             gameState.isGameOver = false; gameState.currentGuess = 1; gameState.guessHistory = [];
             gameState.maxGuesses = gameState.isHardMode ? 3 : 5;
 
@@ -474,16 +495,6 @@
                 elements.castList.className = "grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-6 mb-4 justify-items-center";
             }
 
-            if(gameState.isDaily) {
-                const today = new Date().toISOString().split('T')[0];
-                const alreadyPlayed = userStats.history && userStats.history.some(h => h.date === today);
-                if(alreadyPlayed) {
-                    alert("You have already played today's Daily Challenge!");
-                    gameState.isDaily = false;
-                    updateModeUI();
-                }
-            }
-
             gameState.target = await fetchContent();
             if(!gameState.target.cast[0].image && typeof gameState.target.cast[0] === 'string') {
                 gameState.target.cast = gameState.target.cast.map(c => ({name: c, image: null, character: null}));
@@ -492,7 +503,49 @@
             elements.infoYear.textContent = gameState.target.year;
             elements.guessCount.textContent = `1/${gameState.maxGuesses}`;
             renderCastList(); revealNextCastMember();
-            setTimeout(focusInput, 100);
+            
+            if (showDailyReview && todayData) {
+                elements.finalStatusTitle.textContent = todayData.win ? "DAILY COMPLETED" : "DAILY FAILED";
+                elements.finalStatusTitle.className = todayData.win ? "text-3xl font-black mb-2 text-green-500" : "text-3xl font-black mb-2 text-red-500";
+                elements.correctMovieReveal.textContent = todayData.title;
+                elements.resultPoster.src = todayData.posterUrl || 'https://via.placeholder.com/300x450?text=No+Poster';
+                
+                const hints = todayData.hints !== undefined ? todayData.hints : 0;
+                const scoreText = todayData.win ? todayData.score : 'X';
+                
+                elements.dailyBreakdown.innerHTML = `
+                    <div class="flex justify-center gap-8 mt-2 mb-2">
+                        <div class="flex flex-col items-center">
+                            <div class="text-4xl font-black text-[var(--text-main)] leading-none mb-1">${scoreText}</div>
+                            <div class="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Score / ${todayData.max || 5}</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div class="text-4xl font-black text-[#d29922] leading-none mb-1">${hints}</div>
+                            <div class="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Hints</div>
+                        </div>
+                    </div>
+                `;
+                elements.dailyBreakdown.classList.remove('hidden');
+                elements.roundResultSection.classList.remove('hidden');
+                
+                elements.playAgainBtn.textContent = "PLAY UNLIMITED";
+                elements.playAgainBtn.classList.replace('bg-gray-500', 'bg-[#238636]');
+                elements.playAgainBtn.classList.replace('hover:bg-gray-600', 'hover:bg-[#2ea043]');
+
+                window.currentShareData = {
+                    grid: todayData.grid || [], 
+                    isDaily: true,
+                    date: todayData.date,
+                    mode: 'movie',
+                    isHardMode: todayData.hardMode || false,
+                    score: scoreText,
+                    max: todayData.max || 5
+                };
+                
+                toggleStatsModal(true);
+            } else {
+                setTimeout(focusInput, 100);
+            }
         }
 
         function renderCastList() {
@@ -655,6 +708,8 @@
                 elements.finalStatusTitle.className = "text-4xl font-black mb-2 text-red-500";
             }
 
+            const hintsUsed = gameState.guessHistory.filter(x => x === 'hint').length;
+
             if(gameState.isDaily) {
                 if(!userStats.history) userStats.history = [];
                 userStats.history.unshift({
@@ -662,7 +717,11 @@
                     title: gameState.target.title,
                     win: win,
                     score: win ? gameState.currentGuess : 'X',
-                    max: gameState.maxGuesses
+                    max: gameState.maxGuesses,
+                    hints: hintsUsed,
+                    posterUrl: gameState.target.posterUrl,
+                    grid: [...gameState.guessHistory], 
+                    hardMode: gameState.isHardMode
                 });
             }
             saveStats();
@@ -670,9 +729,44 @@
             elements.correctMovieReveal.textContent = gameState.target.title;
             elements.resultPoster.src = gameState.target.posterUrl;
             elements.resultPoster.onerror = function() { this.src = 'https://via.placeholder.com/300x450?text=No+Poster'; };
+            
+            elements.dailyBreakdown.innerHTML = `
+                <div class="flex justify-center gap-8 mt-2 mb-2">
+                    <div class="flex flex-col items-center">
+                        <div class="text-4xl font-black text-[var(--text-main)] leading-none mb-1">${win ? gameState.currentGuess : 'X'}</div>
+                        <div class="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Score / ${gameState.maxGuesses}</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="text-4xl font-black text-[#d29922] leading-none mb-1">${hintsUsed}</div>
+                        <div class="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Hints</div>
+                    </div>
+                </div>
+            `;
+            elements.dailyBreakdown.classList.remove('hidden');
             elements.roundResultSection.classList.remove('hidden');
+
+            window.currentShareData = {
+                grid: [...gameState.guessHistory],
+                isDaily: gameState.isDaily,
+                date: new Date().toISOString().split('T')[0],
+                mode: gameState.mode,
+                isHardMode: gameState.isHardMode,
+                score: win ? gameState.currentGuess : 'X',
+                max: gameState.maxGuesses
+            };
             
             elements.nextRoundBtn.textContent = gameState.isDaily ? "PLAY UNLIMITED" : "PLAY NEXT ROUND";
+            
+            if (gameState.isDaily) {
+                elements.playAgainBtn.textContent = "PLAY UNLIMITED";
+                elements.playAgainBtn.classList.replace('bg-gray-500', 'bg-[#238636]');
+                elements.playAgainBtn.classList.replace('hover:bg-gray-600', 'hover:bg-[#2ea043]');
+            } else {
+                elements.playAgainBtn.textContent = "NEXT ROUND";
+                elements.playAgainBtn.classList.replace('bg-gray-500', 'bg-[#238636]');
+                elements.playAgainBtn.classList.replace('hover:bg-gray-600', 'hover:bg-[#2ea043]');
+            }
+
             setTimeout(() => toggleStatsModal(true), 1500);
         }
 
@@ -696,16 +790,6 @@
                     });
                 } else {
                     elements.historyList.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-[var(--text-muted)] italic">No daily challenges played yet.</td></tr>`;
-                }
-
-                if (gameState.isDaily) {
-                    elements.playAgainBtn.textContent = "REVIEW RESULT";
-                    elements.playAgainBtn.classList.replace('bg-[#238636]', 'bg-gray-500');
-                    elements.playAgainBtn.classList.replace('hover:bg-[#2ea043]', 'hover:bg-gray-600');
-                } else {
-                    elements.playAgainBtn.textContent = "NEXT ROUND";
-                    elements.playAgainBtn.classList.replace('bg-gray-500', 'bg-[#238636]');
-                    elements.playAgainBtn.classList.replace('hover:bg-gray-600', 'hover:bg-[#2ea043]');
                 }
             }
             elements.statsModal.classList.toggle('hidden', !show);
@@ -750,17 +834,34 @@
         });
 
         elements.closeStatsBtn.addEventListener('click', () => toggleStatsModal(false));
+        
         elements.playAgainBtn.addEventListener('click', () => { 
             toggleStatsModal(false); 
-            if (!gameState.isDaily) initializeGame(); 
+            if (gameState.isDaily) { 
+                gameState.isDaily = false; 
+                gameState.mode = 'movie'; 
+                updateModeUI(); 
+            }
+            initializeGame(); 
         });
 
         elements.shareButton.addEventListener('click', () => {
-            const grid = gameState.guessHistory.map(r => r==='correct'?'🟩':'🟥').join('');
-            const type = gameState.isDaily ? `DAILY ${new Date().toISOString().split('T')[0]}` : gameState.mode.toUpperCase();
-            const scoreDisp = gameState.isHardMode ? `${gameState.guessHistory.length}/3 (HARD)` : `${gameState.guessHistory.length}/5`;
-            const text = `Cast-Guessr ${type}\nScore: ${scoreDisp}\n${grid}`;
-            navigator.clipboard.writeText(text); alert("Copied results to clipboard!");
+            const data = window.currentShareData;
+            if(!data) return;
+
+            const gridStr = data.grid.map(r => {
+                if(r === 'correct') return '🟩';
+                if(r === 'wrong') return '🟥';
+                if(r === 'hint') return '🟨'; 
+                return '⬛';
+            }).join('');
+            
+            const type = data.isDaily ? `DAILY ${data.date}` : data.mode.toUpperCase();
+            const scoreDisp = data.isHardMode ? `${data.score}/${data.max} (HARD)` : `${data.score}/${data.max}`;
+            const text = `Cast-Guessr ${type}\nScore: ${scoreDisp}\n${gridStr}`;
+            
+            navigator.clipboard.writeText(text); 
+            alert("Copied results to clipboard!");
         });
 
         const searchCache = {};

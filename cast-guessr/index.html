@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=100..900&display=swap');
         
         /* --- THEME DEFINITIONS --- */
         :root {
@@ -89,10 +89,10 @@
             </div>
             
             <div class="text-center w-full flex flex-col items-center">
-                <img src="/logo.png" alt="Cast-Guessr Logo" class="h-20 md:h-28 lg:h-32 object-contain mb-2 drop-shadow-lg transition-transform hover:scale-105">
-                <h1 class="hidden">Cast-Guessr</h1> <div id="daily-indicator" class="hidden text-[10px] font-bold bg-yellow-500 text-black px-2 py-0.5 rounded-full inline-block shadow-[0_0_10px_rgba(234,179,8,0.5)]">DAILY CHALLENGE</div>
+                <img src="/logo.png" alt="Cast-Guessr Logo" class="h-32 md:h-48 lg:h-52 object-contain mb-6 drop-shadow-2xl transition-transform hover:scale-105">
+                <h1 class="hidden">Cast-Guessr</h1> <div id="daily-indicator" class="hidden text-[10px] font-bold bg-yellow-500 text-black px-2 py-0.5 rounded-full block mb-4 mx-auto w-fit shadow-[0_0_10px_rgba(234,179,8,0.5)]">DAILY CHALLENGE</div>
                 
-                <div class="flex flex-wrap justify-center mt-3 gap-2">
+                <div class="flex flex-wrap justify-center mt-4 gap-2">
                     <button id="daily-btn" class="px-3 py-1 text-[10px] md:text-xs font-bold rounded-full bg-yellow-500 text-black border border-transparent shadow-lg transition transform hover:scale-105">DAILY</button>
                     <button id="mode-movie-btn" class="px-3 py-1 text-[10px] md:text-xs font-bold rounded-full text-accent border border-accent hover:bg-accent hover:text-white transition transform hover:scale-105">UNLIMITED MOVIES</button>
                     <button id="mode-tv-btn" class="px-3 py-1 text-[10px] md:text-xs font-bold rounded-full text-accent border border-accent hover:bg-accent hover:text-white transition transform hover:scale-105">UNLIMITED TV</button>
@@ -642,7 +642,7 @@
                 
                 if(gameState.useOnlineMode) {
                     try {
-                        const res = await fetch(`/.netlify/functions/search?mode=${gameState.mode}&query=${encodeURIComponent(val)}`);
+                        const res = await fetch(`/.netlify/functions/search?mode=${gameState.mode}&query=${encodeURIComponent(q)}`);
                         const data = await res.json();
                         if(data.results && data.results.length > 0) {
                             const match = data.results[0]; 

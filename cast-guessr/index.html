@@ -4,15 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cast-Guessr: The Movie Cast Game</title>
-   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-76BG9PZQL8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    
+    <link rel="icon" type="image/png" href="/favicon.png">
 
-  gtag('config', 'G-76BG9PZQL8');
-</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -94,9 +88,9 @@
                 </button>
             </div>
             
-            <div class="text-center w-full">
-                <h1 class="text-3xl md:text-5xl font-black text-accent tracking-tight leading-tight">Cast-Guessr</h1>
-                <div id="daily-indicator" class="hidden text-[10px] font-bold bg-yellow-500 text-black px-2 py-0.5 rounded-full inline-block shadow-[0_0_10px_rgba(234,179,8,0.5)]">DAILY CHALLENGE</div>
+            <div class="text-center w-full flex flex-col items-center">
+                <img src="/logo.png" alt="Cast-Guessr Logo" class="h-20 md:h-28 lg:h-32 object-contain mb-2 drop-shadow-lg transition-transform hover:scale-105">
+                <h1 class="hidden">Cast-Guessr</h1> <div id="daily-indicator" class="hidden text-[10px] font-bold bg-yellow-500 text-black px-2 py-0.5 rounded-full inline-block shadow-[0_0_10px_rgba(234,179,8,0.5)]">DAILY CHALLENGE</div>
                 
                 <div class="flex flex-wrap justify-center mt-3 gap-2">
                     <button id="daily-btn" class="px-3 py-1 text-[10px] md:text-xs font-bold rounded-full bg-yellow-500 text-black border border-transparent shadow-lg transition transform hover:scale-105">DAILY</button>
@@ -939,4 +933,3 @@
     </script>
 </body>
 </html>
-

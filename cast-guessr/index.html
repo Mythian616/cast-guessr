@@ -591,14 +591,16 @@
         function renderCastList() {
             elements.castList.innerHTML = '';
             for(let i=0; i < gameState.maxGuesses; i++) {
+                const rewardVal = Math.max(0, 100 - (i * 25));
                 const div = document.createElement('div');
                 div.id = `actor-block-${i}`;
-                div.className = "flex flex-col items-center justify-center p-2 rounded-xl element-bg w-24 h-32 md:w-40 md:h-56 transition-all duration-500 transform scale-95 opacity-50 border border-transparent";
+                div.className = "flex flex-col items-center justify-start p-2 rounded-xl element-bg w-24 h-36 md:w-40 md:h-60 transition-all duration-500 transform scale-95 opacity-50 border border-transparent";
                 div.innerHTML = `
                     <div class="w-14 h-14 md:w-28 md:h-28 rounded-full bg-black/10 mb-2 overflow-hidden shadow-inner flex items-center justify-center relative">
                         <img id="actor-img-${i}" class="w-full h-full object-cover hidden" src="">
                         <span id="actor-q-${i}" class="text-[var(--text-muted)] text-3xl md:text-4xl font-black">?</span>
                     </div>
+                    <div class="mb-1 text-[10px] md:text-xs font-black text-green-500 bg-green-500/10 px-1.5 md:px-2 py-0.5 rounded border border-green-500/30 shadow-sm">$${rewardVal}</div>
                     <div id="actor-name-${i}" class="text-[9px] md:text-sm font-bold text-center leading-tight px-1 opacity-0 transition-opacity mb-1">???</div>
                     ${ !gameState.isHardMode ? `<button id="hint-btn-${i}" class="hidden hint-btn shadow-md" onclick="revealCharacter(${i})">REVEAL ROLE</button>` : '' }
                     <div id="actor-char-${i}" class="hidden text-[9px] md:text-[10px] text-accent font-bold text-center leading-tight animate-pop"></div>

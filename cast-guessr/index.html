@@ -388,7 +388,16 @@
         function seededRandom(seed) { const x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
         
         function loadStats() { 
-            const stored = localStorage.getItem('castGuessrStats_v7'); 
+            let stored = localStorage.getItem('castGuessrStats_v7'); 
+            
+            // PRE-FLIGHT FIX: Migrate stats from older versions so players don't lose their streaks
+            if(!stored) {
+                const oldStored = localStorage.getItem('castGuessrStats_v6');
+                if (oldStored) {
+                    stored = oldStored; 
+                }
+            }
+
             if(stored) {
                 userStats = JSON.parse(stored);
                 if(userStats.hasOwnProperty('isHardMode')) {
@@ -400,6 +409,8 @@
                     elements.worldWideToggle.checked = gameState.isWorldWideMode;
                 }
             }
+            
+            // Ensure bank variables exist even for returning v6 players
             if (typeof userStats.dailyBank === 'undefined') userStats.dailyBank = 0;
             if (typeof userStats.unlimitedBank === 'undefined') userStats.unlimitedBank = 0;
             
@@ -436,10 +447,13 @@
             const seed = getDailySeed();
             const getRandom = (offset = 0) => gameState.isDaily ? seededRandom(seed + offset) : Math.random();
 
-            let page = Math.floor(getRandom(0) * 20) + 1;
             const isWorldWide = gameState.isDaily ? false : gameState.isWorldWideMode;
             const genre = gameState.isDaily ? 'all' : gameState.selectedGenre;
             const decade = gameState.isDaily ? 'all' : gameState.selectedDecade;
+
+            // SMART PAGE LIMIT: 500 pages maximum for default, safe 40 pages for niche filtered searches
+            let maxPages = (genre === 'all' && decade === 'all') ? 500 : 40;
+            let page = Math.floor(getRandom(0) * maxPages) + 1;
 
             let proxyUrl = `/.netlify/functions/getContent?mode=${gameState.mode}&page=${page}&genre=${genre}&decade=${decade}&isWorldWide=${isWorldWide}&isDaily=${gameState.isDaily}`;
             const res = await fetch(proxyUrl);
@@ -914,12 +928,18 @@
             const data = window.currentShareData;
             if(!data) return;
 
-            const gridStr = data.grid.map(r => {
+            let emojis = data.grid.map(r => {
                 if(r === 'correct') return '🟩';
                 if(r === 'wrong') return '🟥';
                 if(r === 'hint') return '🟨'; 
                 return '⬛';
-            }).join('');
+            });
+            
+            // PRE-FLIGHT FIX: Pad the remaining empty guesses with black squares
+            while(emojis.length < data.max) {
+                emojis.push('⬛');
+            }
+            const gridStr = emojis.join('');
             
             const type = data.isDaily ? `DAILY ${data.date}` : data.mode.toUpperCase();
             const scoreDisp = data.isHardMode ? `${data.score}/${data.max} (HARD)` : `${data.score}/${data.max}`;
@@ -953,10 +973,10 @@
 
         elements.movieInput.addEventListener('input', () => {
             clearTimeout(debounce);
-            const q = elements.movieInput.value;
-            if(q.length < 2) { elements.autocompleteResults.classList.add('hidden'); return; }
+            const val = elements.movieInput.value;
+            if(val.length < 2) { elements.autocompleteResults.classList.add('hidden'); return; }
             
-            const cacheKey = gameState.mode + '_' + q.toLowerCase();
+            const cacheKey = gameState.mode + '_' + val.toLowerCase();
             if (searchCache[cacheKey]) {
                 renderAutocomplete(searchCache[cacheKey]);
                 return;
@@ -966,7 +986,7 @@
                 let results = [];
                 if(gameState.useOnlineMode) {
                     try {
-                        const res = await fetch(`/.netlify/functions/search?mode=${gameState.mode}&query=${encodeURIComponent(q)}`);
+                        const res = await fetch(`/.netlify/functions/search?mode=${gameState.mode}&query=${encodeURIComponent(val)}`);
                         if (!res.ok) throw new Error("Proxy error");
                         const data = await res.json();
                         if (data.results) {
@@ -974,11 +994,11 @@
                         }
                     } catch(e) { 
                         const src = gameState.mode==='movie' ? LOCAL_MOVIES : LOCAL_TV_SHOWS;
-                        results = src.filter(i => i.title.toLowerCase().includes(q.toLowerCase())).slice(0,5).map(i=>i.title);
+                        results = src.filter(i => i.title.toLowerCase().includes(val.toLowerCase())).slice(0,5).map(i=>i.title);
                     }
                 } else {
                     const src = gameState.mode==='movie' ? LOCAL_MOVIES : LOCAL_TV_SHOWS;
-                    results = src.filter(i => i.title.toLowerCase().includes(q.toLowerCase())).slice(0,5).map(i=>i.title);
+                    results = src.filter(i => i.title.toLowerCase().includes(val.toLowerCase())).slice(0,5).map(i=>i.title);
                 }
                 
                 searchCache[cacheKey] = results;

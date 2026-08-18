@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         
         :root {
             --bg-main: #e0f2fe;
@@ -115,7 +115,7 @@
         <div id="game-stats" class="mb-4 element-bg p-3 md:p-5 rounded-lg shadow-inner flex flex-wrap justify-between text-xs md:text-base border border-theme">
             <div class="flex items-center gap-1"><span class="font-bold text-accent">GENRE:</span> <span id="info-genre" class="font-medium">...</span></div>
             <div class="flex items-center gap-1"><span id="info-year-label" class="font-bold text-accent">YEAR:</span> <span id="info-year" class="font-medium">...</span></div>
-            <div class="flex items-center gap-1"><span class="font-bold text-green-500">REWARD:</span> <span id="current-reward" class="font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/30">$100</span></div>
+            <div class="flex items-center gap-1"><span class="font-bold text-[var(--text-main)]">REWARD:</span> <span id="current-reward" class="font-bold px-2 py-0.5 rounded border text-green-500 bg-green-500/10 border-green-500/30">$100</span></div>
             <div class="flex items-center gap-1"><span class="font-bold text-accent">GUESS:</span> <span id="guess-count" class="font-bold element-active px-2 py-0.5 rounded">1/5</span></div>
         </div>
 
@@ -347,9 +347,26 @@
             historyList: document.getElementById('history-list')
         };
 
+        function getRewardColorClasses(reward) {
+            if (reward >= 100) return 'text-green-500 bg-green-500/10 border-green-500/30';
+            if (reward >= 75) return 'text-lime-500 bg-lime-500/10 border-lime-500/30';
+            if (reward >= 50) return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30';
+            if (reward >= 25) return 'text-orange-500 bg-orange-500/10 border-orange-500/30';
+            return 'text-red-500 bg-red-500/10 border-red-500/30';
+        }
+
+        function getBaseRewardColor(reward) {
+            if (reward >= 100) return 'text-green-500';
+            if (reward >= 75) return 'text-lime-500';
+            if (reward >= 50) return 'text-yellow-500';
+            if (reward >= 25) return 'text-orange-500';
+            return 'text-red-500';
+        }
+
         function updateRewardDisplay() {
             const reward = Math.max(0, 100 - ((gameState.currentGuess - 1) * 25));
             elements.currentReward.textContent = `$${reward}`;
+            elements.currentReward.className = `font-bold px-2 py-0.5 rounded border ${getRewardColorClasses(reward)}`;
         }
 
         function applyTheme(themeName) {
@@ -561,11 +578,12 @@
                 
                 const hints = todayData.hints !== undefined ? todayData.hints : 0;
                 const scoreText = todayData.win ? todayData.score : 'X';
+                const rewardColor = getBaseRewardColor(todayData.reward || 0);
                 
                 elements.dailyBreakdown.innerHTML = `
                     <div class="flex justify-center gap-8 mt-2 mb-2">
                         <div class="flex flex-col items-center">
-                            <div class="text-4xl font-black text-green-500 leading-none mb-1">$${todayData.reward || 0}</div>
+                            <div class="text-4xl font-black ${rewardColor} leading-none mb-1">$${todayData.reward || 0}</div>
                             <div class="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Banked</div>
                         </div>
                         <div class="flex flex-col items-center">
@@ -606,15 +624,21 @@
             elements.castList.innerHTML = '';
             for(let i=0; i < gameState.maxGuesses; i++) {
                 const rewardVal = Math.max(0, 100 - (i * 25));
+                const colorClasses = getRewardColorClasses(rewardVal);
+                const actor = gameState.target.cast[i];
+                
+                // Pre-load the actor image URL here to blur it
+                const imgUrl = (actor && actor.image) ? actor.image : `https://ui-avatars.com/api/?name=${encodeURIComponent(actor ? actor.name : 'Unknown')}&background=random`;
+
                 const div = document.createElement('div');
                 div.id = `actor-block-${i}`;
-                div.className = "flex flex-col items-center justify-start p-2 rounded-xl element-bg w-24 h-36 md:w-40 md:h-60 transition-all duration-500 transform scale-95 opacity-50 border border-transparent";
+                div.className = "flex flex-col items-center justify-start p-2 rounded-xl element-bg w-24 h-36 md:w-40 md:h-60 transition-all duration-500 transform scale-95 opacity-80 border border-transparent";
                 div.innerHTML = `
                     <div class="w-14 h-14 md:w-28 md:h-28 rounded-full bg-black/10 mb-2 overflow-hidden shadow-inner flex items-center justify-center relative">
-                        <img id="actor-img-${i}" class="w-full h-full object-cover hidden" src="">
-                        <span id="actor-q-${i}" class="text-[var(--text-muted)] text-3xl md:text-4xl font-black">?</span>
+                        <img id="actor-img-${i}" class="w-full h-full object-cover blur-lg md:blur-xl scale-125 brightness-75 transition-all duration-700" src="${imgUrl}">
+                        <span id="actor-q-${i}" class="hidden text-[var(--text-muted)] text-3xl md:text-4xl font-black">?</span>
                     </div>
-                    <div class="mb-1 text-[10px] md:text-xs font-black text-green-500 bg-green-500/10 px-1.5 md:px-2 py-0.5 rounded border border-green-500/30 shadow-sm">$${rewardVal}</div>
+                    <div class="mb-1 text-[10px] md:text-xs font-black px-1.5 md:px-2 py-0.5 rounded shadow-sm ${colorClasses}">$${rewardVal}</div>
                     <div id="actor-name-${i}" class="text-[9px] md:text-sm font-bold text-center leading-tight px-1 opacity-0 transition-opacity mb-1">???</div>
                     ${ !gameState.isHardMode ? `<button id="hint-btn-${i}" class="hidden hint-btn shadow-md" onclick="revealCharacter(${i})">REVEAL ROLE</button>` : '' }
                     <div id="actor-char-${i}" class="hidden text-[9px] md:text-[10px] text-accent font-bold text-center leading-tight animate-pop"></div>
@@ -658,11 +682,13 @@
                 const block = document.getElementById(`actor-block-${i}`);
                 const actor = gameState.target.cast[i];
                 if(block && actor) {
-                     block.classList.remove('opacity-50', 'scale-95');
+                     block.classList.remove('opacity-50', 'opacity-80', 'scale-95');
                      block.classList.add('element-active', 'scale-100', 'opacity-100', 'border-2', 'border-accent');
-                     document.getElementById(`actor-img-${i}`).src = actor.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(actor.name)}&background=random`;
-                     document.getElementById(`actor-img-${i}`).classList.remove('hidden');
-                     document.getElementById(`actor-q-${i}`).classList.add('hidden');
+                     
+                     // Remove the blur classes to cleanly reveal the image
+                     const img = document.getElementById(`actor-img-${i}`);
+                     if(img) img.classList.remove('blur-lg', 'md:blur-xl', 'scale-125', 'brightness-75');
+                     
                      document.getElementById(`actor-name-${i}`).textContent = actor.name;
                      document.getElementById(`actor-name-${i}`).classList.remove('opacity-0');
                      
@@ -801,10 +827,12 @@
             elements.resultPoster.src = gameState.target.posterUrl;
             elements.resultPoster.onerror = function() { this.src = 'https://via.placeholder.com/300x450?text=No+Poster'; };
             
+            const rewardColor = getBaseRewardColor(win ? reward : 0);
+
             elements.dailyBreakdown.innerHTML = `
                 <div class="flex justify-center gap-8 mt-2 mb-2">
                     <div class="flex flex-col items-center">
-                        <div class="text-4xl font-black text-green-500 leading-none mb-1">$${win ? reward : 0}</div>
+                        <div class="text-4xl font-black ${rewardColor} leading-none mb-1">$${win ? reward : 0}</div>
                         <div class="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest">Banked</div>
                     </div>
                     <div class="flex flex-col items-center">
@@ -864,7 +892,7 @@
                         const tr = document.createElement('tr');
                         tr.className = "border-b border-theme last:border-0 hover:brightness-110";
                         const max = h.max || 5;
-                        tr.innerHTML = `<td class="px-4 py-3 text-[var(--text-muted)] font-mono text-xs">${h.date}</td><td class="px-4 py-3 font-bold ${h.win ? 'text-green-500' : 'text-red-500'}">${h.title} <span class="text-xs font-normal">($${h.reward || 0})</span></td><td class="px-4 py-3 text-right font-black">${h.score}/${max}</td>`;
+                        tr.innerHTML = `<td class="px-4 py-3 text-[var(--text-muted)] font-mono text-xs">${h.date}</td><td class="px-4 py-3 font-bold ${h.win ? 'text-green-500' : 'text-red-500'}">${h.title} <span class="text-xs font-black ${getBaseRewardColor(h.reward || 0)}">($${h.reward || 0})</span></td><td class="px-4 py-3 text-right font-black">${h.score}/${max}</td>`;
                         elements.historyList.appendChild(tr);
                     });
                 } else {
@@ -935,7 +963,6 @@
                 return '⬛';
             });
             
-            // PRE-FLIGHT FIX: Pad the remaining empty guesses with black squares
             while(emojis.length < data.max) {
                 emojis.push('⬛');
             }
